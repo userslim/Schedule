@@ -1,4 +1,3 @@
-# app.py
 import streamlit as st
 from datetime import datetime, time, date, timedelta
 
@@ -30,28 +29,26 @@ def find_common_slots(stakeholders):
     if not stakeholders:
         return []
 
-    # Extract all intervals per person
     all_intervals = [s['slots'] for s in stakeholders]
 
     # Start with intervals of first person
     common = all_intervals[0]
-    # Intersect with each subsequent person
     for person_intervals in all_intervals[1:]:
         new_common = []
         for c_start, c_end in common:
             for p_start, p_end in person_intervals:
                 start = max(c_start, p_start)
                 end = min(c_end, p_end)
-                if start < end:  # valid overlap
+                if start < end:
                     new_common.append((start, end))
         common = new_common
         if not common:
             break
     return common
 
-# ---------- Session state initialization ----------
+# ---------- Session state ----------
 if 'stakeholders' not in st.session_state:
-    st.session_state.stakeholders = []  # list of {'name': str, 'slots': [(start, end), ...]}
+    st.session_state.stakeholders = []  # each: {'name': str, 'slots': [(start, end), ...]}
 
 if 'slot_count' not in st.session_state:
     st.session_state.slot_count = 1  # number of slot forms shown for current stakeholder
@@ -84,16 +81,28 @@ with st.expander("➕ Add a stakeholder", expanded=True):
 
                 # Start time
                 st.markdown("**Start time**")
-                hr_start = st.number_input(f"Hour (1-12)", min_value=1, max_value=12, value=9, key=f"start_hr_{i}")
-                min_start = st.number_input(f"Minute", min_value=0, max_value=59, value=0, step=1, key=f"start_min_{i}")
-                ampm_start = st.selectbox(f"AM/PM", ["AM", "PM"], index=0, key=f"start_ampm_{i}")
+                hr_start = st.number_input(
+                    "Hour (1-12)", min_value=1, max_value=12, value=9, key=f"start_hr_{i}"
+                )
+                min_start = st.number_input(
+                    "Minute", min_value=0, max_value=59, value=0, step=1, key=f"start_min_{i}"
+                )
+                ampm_start = st.selectbox(
+                    "AM/PM", ["AM", "PM"], index=0, key=f"start_ampm_{i}"
+                )
 
             with col2:
                 # End time (same date assumed)
                 st.markdown("**End time**")
-                hr_end = st.number_input(f"Hour (1-12)", min_value=1, max_value=12, value=17, key=f"end_hr_{i}")
-                min_end = st.number_input(f"Minute", min_value=0, max_value=59, value=0, step=1, key=f"end_min_{i}")
-                ampm_end = st.selectbox(f"AM/PM", ["AM", "PM"], index=1, key=f"end_ampm_{i}")
+                hr_end = st.number_input(
+                    "Hour (1-12)", min_value=1, max_value=12, value=5, key=f"end_hr_{i}"   # <-- FIXED: value=5 (5 PM)
+                )
+                min_end = st.number_input(
+                    "Minute", min_value=0, max_value=59, value=0, step=1, key=f"end_min_{i}"
+                )
+                ampm_end = st.selectbox(
+                    "AM/PM", ["AM", "PM"], index=1, key=f"end_ampm_{i}"
+                )
 
             # Convert to datetime
             start_time = convert_12hr_to_24hr(hr_start, min_start, ampm_start)
@@ -107,14 +116,13 @@ with st.expander("➕ Add a stakeholder", expanded=True):
                 slots.append((start_dt, end_dt))
 
         # Buttons
-        col1, col2, col3 = st.columns([1,1,2])
+        col1, col2, col3 = st.columns([1, 1, 2])
         with col1:
             add_slot = st.form_submit_button("➕ Add another slot")
         with col2:
             submit = st.form_submit_button("✅ Add stakeholder")
         with col3:
-            # dummy for alignment
-            pass
+            pass  # alignment
 
         if add_slot:
             st.session_state.slot_count += 1
@@ -136,7 +144,9 @@ with st.expander("➕ Add a stakeholder", expanded=True):
 if st.session_state.stakeholders:
     st.subheader("Current stakeholders")
     for i, s in enumerate(st.session_state.stakeholders):
-        slot_str = ", ".join([f"{format_datetime_12hr(start)} - {format_datetime_12hr(end)}" for start, end in s['slots']])
+        slot_str = ", ".join(
+            [f"{format_datetime_12hr(start)} - {format_datetime_12hr(end)}" for start, end in s['slots']]
+        )
         st.write(f"{i+1}. **{s['name']}**: {slot_str}")
 
     col1, col2 = st.columns(2)
